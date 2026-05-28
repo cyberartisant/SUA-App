@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.DS_Store
+.env
+.env.*
+dev-dist/
+.claude/settings.local.json
+sw.js
+workbox-*.js
