@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useCatches } from '../contexts/CatchContext'
 import { useAuth } from '../contexts/AuthContext'
 import { getWeather } from '../utils/weather'
+import LocationPicker from '../components/LocationPicker'
 
 const SPECIES = [
   'Bass (Largemouth)', 'Bass (Smallmouth)', 'Bass (Striped)', 'Bass (White)',
@@ -17,23 +18,43 @@ const SPECIES = [
 
 export default function AddCatch() {
   const navigate = useNavigate()
-  const { addCatch } = useCatches()
+  const { id } = useParams()
+  const { catches, addCatch, updateCatch } = useCatches()
   const { user } = useAuth()
   const fileInputRef = useRef(null)
 
+  const existing = id ? catches.find(c => c.id === id) : null
   const today = new Date()
-  const [form, setForm] = useState({
-    species: '',
-    customSpecies: '',
-    weight: '',
-    length: '',
-    date: today.toISOString().split('T')[0],
-    time: today.toTimeString().slice(0, 5),
-    notes: '',
-    location: null,
-    photos: []
+
+  const [form, setForm] = useState(() => {
+    if (existing) {
+      const knownSpecies = SPECIES.includes(existing.species)
+      return {
+        species: knownSpecies ? existing.species : 'Other',
+        customSpecies: knownSpecies ? '' : existing.species,
+        weight: existing.weight ?? '',
+        length: existing.length ?? '',
+        date: existing.date,
+        time: existing.time,
+        notes: existing.notes || '',
+        location: existing.location || null,
+        photos: existing.photos || []
+      }
+    }
+    return {
+      species: '',
+      customSpecies: '',
+      weight: '',
+      length: '',
+      date: today.toISOString().split('T')[0],
+      time: today.toTimeString().slice(0, 5),
+      notes: '',
+      location: null,
+      photos: []
+    }
   })
   const [locLoading, setLocLoading] = useState(false)
+  const [showPicker, setShowPicker] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -62,8 +83,8 @@ export default function AddCatch() {
         setLocLoading(false)
       },
       err => {
-        setError('Could not get location: ' + err.message)
         setLocLoading(false)
+        setShowPicker(true)
       },
       { enableHighAccuracy: true, timeout: 10000 }
     )
@@ -88,14 +109,9 @@ export default function AddCatch() {
     setSaving(true)
     setError('')
 
-    let weather = null
-    if (form.location) {
-      const apiKey = user?.weatherApiKey || localStorage.getItem('weather_api_key')
-      if (apiKey) weather = await getWeather(form.location.lat, form.location.lng, apiKey)
-    }
-
-    addCatch({
-      species: form.species === 'Other' ? (form.customSpecies || 'Other') : form.species,
+    const species = form.species === 'Other' ? (form.customSpecies || 'Other') : form.species
+    const payload = {
+      species,
       weight: form.weight ? parseFloat(form.weight) : null,
       length: form.length ? parseFloat(form.length) : null,
       date: form.date,
@@ -103,8 +119,27 @@ export default function AddCatch() {
       notes: form.notes,
       location: form.location,
       photos: form.photos,
-      weather
-    })
+    }
+
+    if (existing) {
+      const locationChanged = form.location && (
+        form.location.lat !== existing.location?.lat ||
+        form.location.lng !== existing.location?.lng
+      )
+      let weather = existing.weather
+      if (locationChanged) {
+        const apiKey = user?.weatherApiKey || localStorage.getItem('weather_api_key')
+        if (apiKey) weather = await getWeather(form.location.lat, form.location.lng, apiKey)
+      }
+      updateCatch(id, { ...payload, weather })
+    } else {
+      let weather = null
+      if (form.location) {
+        const apiKey = user?.weatherApiKey || localStorage.getItem('weather_api_key')
+        if (apiKey) weather = await getWeather(form.location.lat, form.location.lng, apiKey)
+      }
+      addCatch({ ...payload, weather })
+    }
 
     navigate('/catches')
   }
@@ -112,7 +147,7 @@ export default function AddCatch() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1>Log a Catch</h1>
+        <h1>{existing ? 'Edit Catch' : 'Log a Catch'}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="catch-form">
@@ -190,16 +225,33 @@ export default function AddCatch() {
               <button type="button" className="btn-small" onClick={() => set('location', null)}>Clear</button>
             </div>
           ) : (
-            <button
-              type="button"
-              className="btn-location"
-              onClick={getGPS}
-              disabled={locLoading}
-            >
-              {locLoading ? '📡 Getting location...' : '📍 Use My GPS Location'}
-            </button>
+            <div className="location-buttons">
+              <button
+                type="button"
+                className="btn-location"
+                onClick={getGPS}
+                disabled={locLoading}
+              >
+                {locLoading ? '📡 Getting location...' : '📍 Use GPS'}
+              </button>
+              <button
+                type="button"
+                className="btn-location btn-location-map"
+                onClick={() => setShowPicker(true)}
+                disabled={locLoading}
+              >
+                🗺️ Pin on Map
+              </button>
+            </div>
           )}
         </div>
+
+        {showPicker && (
+          <LocationPicker
+            onConfirm={loc => { set('location', loc); setShowPicker(false) }}
+            onCancel={() => setShowPicker(false)}
+          />
+        )}
 
         <div className="form-group">
           <label>Notes</label>
@@ -243,12 +295,11 @@ export default function AddCatch() {
             multiple
             onChange={handlePhotos}
             style={{ display: 'none' }}
-            capture="environment"
           />
         </div>
 
         <button type="submit" className="btn-primary btn-full" disabled={saving}>
-          {saving ? 'Saving...' : '🎣 Save Catch'}
+          {saving ? 'Saving...' : existing ? '✏️ Save Changes' : '🎣 Save Catch'}
         </button>
       </form>
     </div>
