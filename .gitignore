@@ -9,3 +9,5 @@ dev-dist/
 .claude/settings.local.json
 sw.js
 workbox-*.js
+
+.vercel

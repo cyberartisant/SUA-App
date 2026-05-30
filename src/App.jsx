@@ -33,6 +33,7 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/" element={<Guard><Shell><Home /></Shell></Guard>} />
       <Route path="/add" element={<Guard><Shell><AddCatch /></Shell></Guard>} />
+      <Route path="/edit/:id" element={<Guard><Shell><AddCatch /></Shell></Guard>} />
       <Route path="/catches" element={<Guard><Shell><MyCatches /></Shell></Guard>} />
       <Route path="/map" element={<Guard><Shell><MapView /></Shell></Guard>} />
       <Route path="/profile" element={<Guard><Shell><Profile /></Shell></Guard>} />

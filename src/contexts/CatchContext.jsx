@@ -28,13 +28,20 @@ export function CatchProvider({ children }) {
     return entry
   }
 
+  function updateCatch(id, data) {
+    const existing = catches.find(c => c.id === id)
+    const updated = { ...existing, ...data }
+    saveCatch(updated)
+    setCatches(prev => prev.map(c => c.id === id ? updated : c))
+  }
+
   function removeCatch(id) {
     deleteCatch(id)
     setCatches(prev => prev.filter(c => c.id !== id))
   }
 
   return (
-    <CatchContext.Provider value={{ catches, addCatch, removeCatch }}>
+    <CatchContext.Provider value={{ catches, addCatch, updateCatch, removeCatch }}>
       {children}
     </CatchContext.Provider>
   )
