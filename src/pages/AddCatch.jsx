@@ -25,6 +25,7 @@ export default function AddCatch() {
 
   const existing = id ? catches.find(c => c.id === id) : null
   const today = new Date()
+  const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
   const [form, setForm] = useState(() => {
     if (existing) {
@@ -46,7 +47,7 @@ export default function AddCatch() {
       customSpecies: '',
       weight: '',
       length: '',
-      date: today.toISOString().split('T')[0],
+      date: localDate,
       time: today.toTimeString().slice(0, 5),
       notes: '',
       location: null,
