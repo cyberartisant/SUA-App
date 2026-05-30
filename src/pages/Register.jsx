@@ -8,6 +8,8 @@ export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
@@ -47,13 +49,23 @@ export default function Register() {
         </div>
         <div className="form-group">
           <label>Password</label>
-          <input type="password" name="password" value={form.password} onChange={handleChange}
-            placeholder="Min. 6 characters" className="form-input" required autoComplete="new-password" />
+          <div className="input-password-wrap">
+            <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange}
+              placeholder="Min. 6 characters" className="form-input" required autoComplete="new-password" />
+            <button type="button" className="btn-show-password" onClick={() => setShowPassword(s => !s)}>
+              {showPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
         </div>
         <div className="form-group">
           <label>Confirm Password</label>
-          <input type="password" name="confirm" value={form.confirm} onChange={handleChange}
-            placeholder="Repeat password" className="form-input" required />
+          <div className="input-password-wrap">
+            <input type={showConfirm ? 'text' : 'password'} name="confirm" value={form.confirm} onChange={handleChange}
+              placeholder="Repeat password" className="form-input" required />
+            <button type="button" className="btn-show-password" onClick={() => setShowConfirm(s => !s)}>
+              {showConfirm ? '🙈' : '👁️'}
+            </button>
+          </div>
         </div>
         <button type="submit" className="btn-primary btn-full" disabled={loading}>
           {loading ? 'Creating account...' : 'Create Account'}
