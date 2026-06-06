@@ -110,39 +110,49 @@ export default function AddCatch() {
     setSaving(true)
     setError('')
 
-    const species = form.species === 'Other' ? (form.customSpecies || 'Other') : form.species
-    const payload = {
-      species,
-      weight: form.weight ? parseFloat(form.weight) : null,
-      length: form.length ? parseFloat(form.length) : null,
-      date: form.date,
-      time: form.time,
-      notes: form.notes,
-      location: form.location,
-      photos: form.photos,
-    }
-
-    if (existing) {
-      const locationChanged = form.location && (
-        form.location.lat !== existing.location?.lat ||
-        form.location.lng !== existing.location?.lng
-      )
-      let weather = existing.weather
-      if (locationChanged) {
-        const apiKey = user?.weatherApiKey || localStorage.getItem('weather_api_key')
-        if (apiKey) weather = await getWeather(form.location.lat, form.location.lng, apiKey)
+    try {
+      const species = form.species === 'Other' ? (form.customSpecies || 'Other') : form.species
+      const payload = {
+        species,
+        weight: form.weight ? parseFloat(form.weight) : null,
+        length: form.length ? parseFloat(form.length) : null,
+        date: form.date,
+        time: form.time,
+        notes: form.notes,
+        location: form.location,
+        photos: form.photos,
       }
-      updateCatch(id, { ...payload, weather })
-    } else {
-      let weather = null
-      if (form.location) {
-        const apiKey = user?.weatherApiKey || localStorage.getItem('weather_api_key')
-        if (apiKey) weather = await getWeather(form.location.lat, form.location.lng, apiKey)
-      }
-      addCatch({ ...payload, weather })
-    }
 
-    navigate('/catches')
+      if (existing) {
+        const locationChanged = form.location && (
+          form.location.lat !== existing.location?.lat ||
+          form.location.lng !== existing.location?.lng
+        )
+        let weather = existing.weather
+        if (locationChanged) {
+          const apiKey = user?.weatherApiKey || localStorage.getItem('weather_api_key')
+          if (apiKey) weather = await getWeather(form.location.lat, form.location.lng, apiKey)
+        }
+        updateCatch(id, { ...payload, weather })
+      } else {
+        let weather = null
+        if (form.location) {
+          const apiKey = user?.weatherApiKey || localStorage.getItem('weather_api_key')
+          if (apiKey) {
+            try { weather = await getWeather(form.location.lat, form.location.lng, apiKey) } catch {}
+          }
+        }
+        addCatch({ ...payload, weather })
+      }
+
+      navigate('/catches')
+    } catch (err) {
+      const msg = err?.name === 'QuotaExceededError'
+        ? 'Storage full — try removing some photos or old catches.'
+        : 'Failed to save. Please try again.'
+      setError(msg)
+      setSaving(false)
+    }
   }
 
   return (

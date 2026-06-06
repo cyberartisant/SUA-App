@@ -3,9 +3,13 @@ const BASE_URL = 'https://api.openweathermap.org/data/2.5'
 export async function getWeather(lat, lng, apiKey) {
   if (!apiKey) return null
   try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 5000)
     const res = await fetch(
-      `${BASE_URL}/weather?lat=${lat}&lon=${lng}&units=imperial&appid=${apiKey}`
+      `${BASE_URL}/weather?lat=${lat}&lon=${lng}&units=imperial&appid=${apiKey}`,
+      { signal: controller.signal }
     )
+    clearTimeout(timer)
     if (!res.ok) return null
     const data = await res.json()
     return {
