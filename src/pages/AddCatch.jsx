@@ -151,7 +151,7 @@ export default function AddCatch() {
           const apiKey = user?.weatherApiKey || localStorage.getItem('weather_api_key')
           if (apiKey) weather = await getWeather(form.location.lat, form.location.lng, apiKey)
         }
-        updateCatch(id, { ...payload, weather })
+        await updateCatch(id, { ...payload, weather })
       } else {
         let weather = null
         if (form.location) {
@@ -160,7 +160,7 @@ export default function AddCatch() {
             try { weather = await getWeather(form.location.lat, form.location.lng, apiKey) } catch {}
           }
         }
-        addCatch({ ...payload, weather })
+        await addCatch({ ...payload, weather })
       }
 
       navigate('/catches')

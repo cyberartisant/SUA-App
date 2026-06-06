@@ -33,10 +33,11 @@ export function getCatches(userId) {
 }
 
 export function saveCatch(catchData) {
+  const { photos: _photos, ...rest } = catchData
   const all = JSON.parse(localStorage.getItem(CATCHES_KEY) || '[]')
-  const idx = all.findIndex(c => c.id === catchData.id)
-  if (idx >= 0) all[idx] = catchData
-  else all.push(catchData)
+  const idx = all.findIndex(c => c.id === rest.id)
+  if (idx >= 0) all[idx] = rest
+  else all.push(rest)
   localStorage.setItem(CATCHES_KEY, JSON.stringify(all))
   return catchData
 }
