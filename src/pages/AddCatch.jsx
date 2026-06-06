@@ -93,15 +93,33 @@ export default function AddCatch() {
 
   async function handlePhotos(e) {
     const files = Array.from(e.target.files).slice(0, 3 - form.photos.length)
-    const encoded = await Promise.all(
-      files.map(f => new Promise(resolve => {
-        const reader = new FileReader()
-        reader.onload = e => resolve(e.target.result)
-        reader.readAsDataURL(f)
-      }))
-    )
+    const encoded = await Promise.all(files.map(compressPhoto))
     set('photos', [...form.photos, ...encoded].slice(0, 3))
     e.target.value = ''
+  }
+
+  function compressPhoto(file) {
+    return new Promise(resolve => {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const img = new Image()
+        img.onload = () => {
+          const MAX = 1200
+          let { width, height } = img
+          if (width > MAX || height > MAX) {
+            if (width > height) { height = Math.round(height * MAX / width); width = MAX }
+            else { width = Math.round(width * MAX / height); height = MAX }
+          }
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+          resolve(canvas.toDataURL('image/jpeg', 0.7))
+        }
+        img.src = ev.target.result
+      }
+      reader.readAsDataURL(file)
+    })
   }
 
   async function handleSubmit(e) {
